@@ -3,54 +3,32 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { randomUUID } from "node:crypto";
-import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative } from "node:path";
-import type { AssistantMessage, Context, Model } from "@earendil-works/pi-ai";
-import type { ExtensionContext, ToolResultEvent } from "@earendil-works/pi-coding-agent";
+import type { AssistantMessage, Context, Model } from "@oh-my-pi/pi-ai";
+import { getBundledModel } from "@oh-my-pi/pi-catalog";
+import type { ExtensionContext, ToolResultEvent } from "@oh-my-pi/pi-coding-agent";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	createEvidencePreservingReducerExtension,
 	DIAGNOSTIC_COMMAND,
 	loadReducerConfig,
 	REDUCER_RECEIPT_SCHEMA,
-} from "../src/sol-pi/extensions/evidence-preserving-reducer/index.ts";
-import { archiveBody } from "../src/sol-pi/extensions/evidence-preserving-reducer/archive.ts";
+} from "../src/sol-omp/extensions/evidence-preserving-reducer/index.ts";
+import { archiveBody } from "../src/sol-omp/extensions/evidence-preserving-reducer/archive.ts";
 import {
 	callReducer,
-	type CompatComplete,
-} from "../src/sol-pi/extensions/evidence-preserving-reducer/provider.ts";
-import { runtimeRoot } from "../src/sol-pi/runtime-paths.ts";
+	type ReducerComplete,
+} from "../src/sol-omp/extensions/evidence-preserving-reducer/provider.ts";
+import { runtimeRoot } from "../src/sol-omp/runtime-paths.ts";
 import { FakePi, FakeSessionManager, fakeContext } from "./helpers.ts";
 
 const cleanupPaths: string[] = [];
 
-const ACTIVE_MODEL = {
-	id: ["gpt-5.6", "sol"].join("-"),
-	name: "GPT-5.6 SoL",
-	api: "openai-responses",
-	provider: "openai-codex",
-	baseUrl: "https://example.invalid/v1",
-	reasoning: true,
-	input: ["text"],
-	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-	contextWindow: 200_000,
-	maxTokens: 16_384,
-} satisfies Model<"openai-responses">;
+const ACTIVE_MODEL = getBundledModel<"openai-responses">("openai-codex", "gpt-5.6-sol");
 
-const REDUCER_MODEL = {
-	id: ["gpt-5.6", "luna"].join("-"),
-	name: "GPT-5.6 Luna",
-	api: "openai-responses",
-	provider: "openai-codex",
-	baseUrl: "https://example.invalid/v1",
-	reasoning: true,
-	input: ["text"],
-	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-	contextWindow: 32_768,
-	maxTokens: 4_096,
-} satisfies Model<"openai-responses">;
+const REDUCER_MODEL = getBundledModel<"openai-responses">("openai-codex", "gpt-5.6-luna");
 
 type Complete = (
 	model: Model<string>,
@@ -167,13 +145,14 @@ function load(
 ): { context: ExtensionContext; manager: FakeSessionManager; pi: FakePi } {
 	const manager = new FakeSessionManager([], "reducer", root);
 	const pi = new FakePi(manager);
-	createEvidencePreservingReducerExtension()(pi.asExtensionApi());
+	createEvidencePreservingReducerExtension({ complete: complete as ReducerComplete })(pi.asExtensionApi());
 	const context = fakeContext(manager, {
 		model: model ?? undefined,
 		modelRegistry: {
 			find: (provider: string, modelId: string) =>
 				provider === REDUCER_MODEL.provider && modelId === REDUCER_MODEL.id ? REDUCER_MODEL : undefined,
-			complete,
+			getApiKey: async () => "test-key",
+			resolver: () => async () => "test-key",
 		} as unknown as ExtensionContext["modelRegistry"],
 		...overrides,
 	});
@@ -187,7 +166,7 @@ describe("evidence-preserving reducer", () => {
 		expect(pi.handlers.get("tool_result")).toHaveLength(1);
 	});
 
-	it("keeps the SoL-Pi identifiers that are written to disk", async () => {
+	it("keeps the SoL-OMP identifiers that are written to disk", async () => {
 		const root = await storeRoot();
 		const signal = "ERROR test target failed";
 		const body = `${signal}\n${"diagnostic output\n".repeat(400)}`;
@@ -207,14 +186,14 @@ describe("evidence-preserving reducer", () => {
 			details: Record<string, unknown>;
 		};
 
-		expect(result.content[0]?.text ?? "").toMatch(/^sol_pi_evidence_receipt_v1\n/u);
-		expect(REDUCER_RECEIPT_SCHEMA).toBe("sol-pi-evidence-receipt/1");
+		expect(result.content[0]?.text ?? "").toMatch(/^sol_omp_evidence_receipt_v1\n/u);
+		expect(REDUCER_RECEIPT_SCHEMA).toBe("sol-omp-evidence-receipt/1");
 		expect(Object.keys(result.details)).toContain("evidencePreservingReducer");
 		expect(manager.entries.map((entry) => entry.type === "custom" && entry.customType)).toContain(
-			"sol-pi-evidence-preserving-reducer-v1",
+			"sol-omp-evidence-preserving-reducer-v1",
 		);
 		expect(
-			manager.customEntryData().every((entry) => entry.schema === "sol-pi-evidence-preserving-reducer/1"),
+			manager.customEntryData().every((entry) => entry.schema === "sol-omp-evidence-preserving-reducer/1"),
 		).toBe(true);
 	});
 
@@ -274,9 +253,9 @@ describe("evidence-preserving reducer", () => {
 		};
 
 		expect(call?.model).toBe(REDUCER_MODEL);
-		expect(call?.context.systemPrompt).toContain("lossless test/build output reducer");
+		expect(call?.context.systemPrompt?.join("\n")).toContain("lossless test/build output reducer");
 		expect(contextInput(call!.context)).toContain("<untrusted_log>");
-		expect(call?.options).toMatchObject({ cacheRetention: "none", maxTokens: 2_048, timeoutMs: 90_000 });
+		expect(call?.options).toMatchObject({ cacheRetention: "none", maxTokens: 2_048 });
 		expect(call?.options.signal).toBeInstanceOf(AbortSignal);
 		const receipt = result.content[0]?.text ?? "";
 		expect(receipt).toMatch(/status=failure/u);
@@ -293,15 +272,15 @@ describe("evidence-preserving reducer", () => {
 		const localSourcePath = relative(join(runtimeRoot(context), "evidence-preserving-reducer"), sourcePath);
 		expect(localSourcePath.length > 0 && !localSourcePath.startsWith("..") && !isAbsolute(localSourcePath)).toBe(true);
 		expect(await readFile(sourcePath, "utf8")).toBe(body);
-		expect((await stat(sourcePath)).mode & 0o777).toBe(0o600);
+		if (process.platform !== "win32") expect((await stat(sourcePath)).mode & 0o777).toBe(0o600);
 		expect(events.filter((entry) => entry.kind === "applied")).toHaveLength(1);
 		expect(notify).toHaveBeenCalledTimes(1);
 		expect(notify.mock.calls[0]?.[0]).toMatch(
-			/^⚡ SoL-Pi · Luna Delegating\nMoney saved · .+ removed from future prompts$/u,
+			/^⚡ SoL-OMP · Evidence-Preserving Reducer\nMoney saved · .+ removed from future prompts$/u,
 		);
 	});
 
-	it("uses Pi-resolved authentication on a fork-shaped model registry", async () => {
+	it("uses OMP-managed authentication for its configured reducer", async () => {
 		const root = await storeRoot();
 		const config = loadReducerConfig(join(root, "session-runtime"));
 		const body = `ERROR fork compatibility\n${"diagnostic\n".repeat(400)}`;
@@ -320,23 +299,16 @@ describe("evidence-preserving reducer", () => {
 			(value) => {
 				call = value;
 			},
-		) as CompatComplete;
+		) as ReducerComplete;
 		let authModel: Model<string> | undefined;
+		const resolveKey = vi.fn(async () => "fork-test-key");
 		const context = fakeContext(new FakeSessionManager([], "fork-session", root), {
 			model: ACTIVE_MODEL,
 			modelRegistry: {
 				find: (provider: string, modelId: string) =>
 					provider === REDUCER_MODEL.provider && modelId === REDUCER_MODEL.id ? REDUCER_MODEL : undefined,
-				getApiKeyAndHeaders: async (model: Model<string>) => {
-					authModel = model;
-					return {
-					ok: true,
-					apiKey: "fork-test-key",
-					headers: { "x-test-header": "fork" },
-					env: { TEST_REGION: "test" },
-					baseUrl: "https://fork.example.invalid/v1",
-					};
-				},
+				getApiKey: async (model: Model<string>) => { authModel = model; return "fork-test-key"; },
+				resolver: () => resolveKey,
 			} as unknown as ExtensionContext["modelRegistry"],
 		});
 
@@ -344,12 +316,8 @@ describe("evidence-preserving reducer", () => {
 
 		expect(result.ok).toBe(true);
 		expect(authModel).toBe(REDUCER_MODEL);
-		expect(call?.model.baseUrl).toBe("https://fork.example.invalid/v1");
-		expect(call?.options).toMatchObject({
-			apiKey: "fork-test-key",
-			headers: { "x-test-header": "fork" },
-			env: { TEST_REGION: "test" },
-		});
+		expect(call?.model).toBe(REDUCER_MODEL);
+		expect(call?.options.apiKey).toBe(resolveKey);
 	});
 
 	it.each([false, true])(
@@ -378,7 +346,7 @@ describe("evidence-preserving reducer", () => {
 			const projected = result.content.map((content) => content.text ?? "").join("\n");
 			expect(projected).toMatch(/Successfully wrote 12 bytes to target\.ts/u);
 			expect(projected).toMatch(failed ? /\[then_run:failed\]/u : /\[then_run:succeeded\]/u);
-			expect(projected).toMatch(/sol_pi_evidence_receipt_v1/u);
+			expect(projected).toMatch(/sol_omp_evidence_receipt_v1/u);
 			expect(projected).not.toContain("diagnostic output");
 			expect(result.isError).toBe(failed);
 			expect(result.details.patch).toBe("test patch");
@@ -480,47 +448,13 @@ describe("evidence-preserving reducer", () => {
 		expect(calls).toBe(0);
 	});
 
-	it("reads only Pi output files in the system temporary directory", async () => {
+	it("leaves OMP artifact-backed diagnostics intact rather than reducing a truncated preview", async () => {
 		const root = await storeRoot();
-		const fullBody = `ERROR full output\n${"full diagnostic\n".repeat(400)}`;
-		const outputPath = join(tmpdir(), `pi-bash-${randomUUID()}.log`);
-		await writeFile(outputPath, fullBody, { mode: 0o600 });
-		cleanupPaths.push(outputPath);
-		let input = "";
-		const { context, manager, pi } = load(
-			root,
-			modelComplete(fullBody, (value) => {
-				input = value;
-				return {
-					schema: REDUCER_RECEIPT_SCHEMA,
-					source_sha256: sourceHash(value),
-					status: "failure",
-					uncertain: false,
-					evidence: [{ kind: "failure", quote: "ERROR full output" }],
-				};
-			}),
-		);
-
-		await pi.emit(
-			"tool_result",
-			bashEvent("ERROR truncated", { details: { fullOutputPath: outputPath } }),
-			context,
-		);
-		expect(input).toContain(fullBody);
-		const candidate = manager.customEntryData().find((entry) => entry.kind === "candidate");
-		expect(await readFile(String(candidate?.sourcePath), "utf8")).toBe(fullBody);
-
-		const outsidePath = join(root, `pi-bash-${randomUUID()}.log`);
-		await writeFile(outsidePath, `ERROR outside file\n${"outside\n".repeat(600)}`);
-		const inlineBody = `ERROR inline output\n${"inline diagnostic\n".repeat(400)}`;
-		input = "";
-		await pi.emit(
-			"tool_result",
-			bashEvent(inlineBody, { toolCallId: "call-2", details: { fullOutputPath: outsidePath } }),
-			context,
-		);
-		expect(input).toContain(inlineBody);
-		expect(input).not.toContain("ERROR outside file");
+		let calls = 0;
+		const { context, pi } = load(root, async () => { calls++; throw new Error("unexpected reducer call"); });
+		const preview = "ERROR truncated\n" + "diagnostic\n".repeat(400) + "[raw output: artifact://17]";
+		expect(await pi.emit("tool_result", bashEvent(preview), context)).toBeUndefined();
+		expect(calls).toBe(0);
 	});
 
 	it("does not delegate small or non-diagnostic output", async () => {

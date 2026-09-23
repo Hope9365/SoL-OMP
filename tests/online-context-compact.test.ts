@@ -2,8 +2,8 @@
  * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: MIT
  */
-import type { AgentMessage } from "@earendil-works/pi-agent-core";
-import type { CompactOptions, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { AgentMessage } from "@oh-my-pi/pi-agent-core";
+import type { CompactOptions, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
 import { describe, expect, it, vi } from "vitest";
 import {
 	BOUNDARY_COMPACTION_INSTRUCTIONS,
@@ -12,8 +12,8 @@ import {
 	POST_COMPACTION_PLAN_REMINDER,
 	registerOnlineContextCompact,
 	resolveKeepRecentTokens,
-} from "../src/sol-pi/extensions/online-context-compact/index.ts";
-import { restoreOnlineState } from "../src/sol-pi/extensions/online-context-compact/state.ts";
+} from "../src/sol-omp/extensions/online-context-compact/index.ts";
+import { restoreOnlineState } from "../src/sol-omp/extensions/online-context-compact/state.ts";
 import { FakePi, FakeSessionManager, fakeContext } from "./helpers.ts";
 
 const OPEN = [{ id: "build", goal: "build it", status: "in_progress" }] as const;
@@ -61,7 +61,7 @@ describe("Online Context Compact extension", () => {
 		registerOnlineContextCompact(pi.asExtensionApi());
 		expect(pi.registeredTools.map((tool) => tool.name)).toEqual(["update_plan"]);
 		expect([...pi.handlers.keys()].sort()).toEqual([
-			"agent_settled",
+			"agent_end",
 			"before_provider_request",
 			"context",
 			"input",
@@ -96,11 +96,6 @@ describe("Online Context Compact extension", () => {
 		const pi = new FakePi(manager);
 		createOnlineContextCompactExtension({ cacheWriteReadRatio: 12.5, keepRecentTokens: 1 })(pi.asExtensionApi());
 		let idle = true;
-		const sendMessage = pi.sendMessage.bind(pi);
-		vi.spyOn(pi, "sendMessage").mockImplementation((message, options) => {
-			idle = false;
-			sendMessage(message, options);
-		});
 		const abort = vi.fn();
 		const compactCalls: CompactOptions[] = [];
 		let finishCompaction!: () => void;
@@ -108,9 +103,9 @@ describe("Online Context Compact extension", () => {
 			finishCompaction = resolve;
 		});
 		let context: ExtensionContext;
-		const compact = (options: CompactOptions = {}): void => {
+		const compact = (options: CompactOptions = {}): Promise<void> => {
 			compactCalls.push(options);
-			void compactionGate.then(() => pi
+			return compactionGate.then(() => pi
 				.emit(
 					"session_compact",
 					{
@@ -130,17 +125,17 @@ describe("Online Context Compact extension", () => {
 					},
 					context,
 				))
-				.then(() => options.onComplete?.({
+				.then(() => { options.onComplete?.({
 					summary: "summary",
 					firstKeptEntryId: manager.entries.at(-1)?.id ?? "message-1",
 					tokensBefore: 195_000,
-				}));
+				}); });
 		};
 		context = fakeContext(manager, {
 			abort,
 			compact,
 			isIdle: () => idle,
-			getSystemPrompt: () => "test prompt",
+			getSystemPrompt: () => ["test prompt"],
 			getContextUsage: () => ({ tokens: 195_000, contextWindow: 200_000, percent: 97.5 }),
 		});
 
@@ -175,26 +170,29 @@ describe("Online Context Compact extension", () => {
 		expect(compactCalls).toEqual([]);
 
 		idle = false;
-		await pi.emit("agent_settled", { type: "agent_settled" }, context);
+		await pi.emit("agent_end", { type: "agent_end" }, context);
 		expect(compactCalls).toEqual([]);
 
 		idle = true;
 		let firstSettlementFinished = false;
-		const firstSettlement = pi.emit("agent_settled", { type: "agent_settled" }, context).then(() => {
+		const firstSettlement = pi.emit("agent_end", { type: "agent_end" }, context).then(() => {
 			firstSettlementFinished = true;
 		});
-		await vi.waitFor(() => expect(compactCalls).toHaveLength(1));
+		await new Promise<void>((resolve) => setImmediate(resolve));
+		expect(compactCalls).toHaveLength(1);
 		expect(await pi.emit("session_before_tree", { type: "session_before_tree" }, context)).toEqual({ cancel: true });
 		finishCompaction();
-		await vi.waitFor(() => expect(pi.sentMessages).toHaveLength(1));
+		await new Promise<void>((resolve) => setImmediate(resolve));
+		expect(pi.sentMessages).toHaveLength(1);
 
 		expect(compactCalls).toHaveLength(1);
-		expect(compactCalls[0]?.customInstructions).toBe(BOUNDARY_COMPACTION_INSTRUCTIONS);
-		expect(firstSettlementFinished).toBe(false);
+		expect(compactCalls[0]?.internalGuidance).toBe(BOUNDARY_COMPACTION_INSTRUCTIONS);
+		await firstSettlement;
+		expect(firstSettlementFinished).toBe(true);
 		expect(pi.sentMessages).toEqual([
 			{
 				message: {
-					customType: "sol-pi-online-context-compact",
+					customType: "sol-omp-online-context-compact",
 					content: POST_COMPACTION_PLAN_REMINDER,
 					display: false,
 				},
@@ -202,10 +200,6 @@ describe("Online Context Compact extension", () => {
 			},
 		]);
 
-		idle = true;
-		await pi.emit("agent_settled", { type: "agent_settled" }, context);
-		await firstSettlement;
-		expect(firstSettlementFinished).toBe(true);
 		expect(await pi.emit("session_before_tree", { type: "session_before_tree" }, context)).toBeUndefined();
 		expect(restoreOnlineState(manager.entries)).toMatchObject({ nativeCompactionCount: 1, pendingProgress: [] });
 	});

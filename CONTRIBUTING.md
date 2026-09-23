@@ -1,22 +1,10 @@
 # Contributing
 
-We welcome external pull requests that improve token efficiency and reduce token cost through Pi-compatible extensions.
+SoL-OMP is a community fork of [NVlabs/SoL-Pi](https://github.com/NVlabs/SoL-Pi). Preserve upstream license headers and attribution. Keep OMP core unmodified; prefer OMP public APIs and a small change at the shared root cause.
 
-## Pull Request Requirements
+1. Explain the observable behavior, security impact and any measured efficiency gain. Do not claim the upstream paper's benchmarks for this fork.
+2. Add a regression check only when a plausible bug would fail it. Exercise modified tool/session behavior, not source text or configuration plumbing.
+3. Run `npm ci --ignore-scripts` and `npm run check` with Bun and OMP 18.2.11. Include a Windows check when shell commands or filesystem paths change.
+4. Update README/configuration/security documentation when behavior changes. Do not commit credentials or session archives.
 
-Your PR should:
-
-- Implement a Pi-compatible extension using Pi's public extension APIs, without modifying Pi's core.
-- Be tested before submission, with relevant automated tests and reproducible validation steps.
-- Clearly explain how the extension reduces token cost or improves token efficiency, including local measurements where available.
-- Document its configuration, expected behavior, and any trade-offs. Efficiency improvements will be evaluated alongside correctness and task performance.
-
-## Benchmarking and Reports
-
-Our team will help benchmark submitted extensions to evaluate token usage, model cost, and task performance.
-
-We will publish updated benchmark reports on a regular reporting cycle, sharing evaluated changes, results, and any observed trade-offs.
-
-## Contributor Recognition
-
-Authors of accepted PRs will be credited as Contributors in the project documentation and the relevant benchmark reports.
+Commit messages follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/), for example `feat: add OMP observation recall` or `fix: preserve native edit schema`. Use `BREAKING CHANGE:` in the body for incompatible configuration or behavior. Pull requests should link the affected issue and include reproduction plus verification commands.

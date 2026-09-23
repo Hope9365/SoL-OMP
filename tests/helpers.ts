@@ -2,9 +2,10 @@
  * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: MIT
  */
-import type { AgentMessage } from "@earendil-works/pi-agent-core";
-import type { ExtensionAPI, ExtensionContext, SessionEntry, Theme, ToolDefinition } from "@earendil-works/pi-coding-agent";
-import type { Component } from "@earendil-works/pi-tui";
+import type { AgentMessage } from "@oh-my-pi/pi-agent-core";
+import type { ExtensionAPI, ExtensionContext, SessionEntry, Theme, ToolDefinition, ToolInfo, ExecResult } from "@oh-my-pi/pi-coding-agent";
+import type { Component } from "@oh-my-pi/pi-tui";
+import { Type } from "@oh-my-pi/omptype/typebox";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -142,6 +143,20 @@ export class FakePi {
 		this.sentMessages.push({ message, options });
 	}
 
+	getAllTools(): ToolInfo[] {
+		return (["edit", "write"] as const).map((name) => ({
+			name, description: "Native " + name,
+			parameters: name === "edit"
+				? Type.Object({ input: Type.String() })
+				: Type.Object({ path: Type.String(), content: Type.String() }),
+			sourceInfo: { source: "builtin", path: "<builtin:" + name + ">", scope: "user", origin: "top-level" },
+		})) as ToolInfo[];
+	}
+
+	async exec(_command: string, _args: string[]): Promise<ExecResult> {
+		throw new Error("exec was not mocked");
+	}
+
 	asExtensionApi(): ExtensionAPI {
 		return this as unknown as ExtensionAPI;
 	}
@@ -196,8 +211,8 @@ export function fakeContext(
 		hasPendingMessages: () => false,
 		shutdown: () => undefined,
 		getContextUsage: () => undefined,
-		compact: () => undefined,
-		getSystemPrompt: () => "",
+		compact: async () => undefined,
+		getSystemPrompt: () => [],
 		...overrides,
 	} as unknown as ExtensionContext;
 }

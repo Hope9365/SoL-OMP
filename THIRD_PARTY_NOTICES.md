@@ -1,23 +1,11 @@
-# Third-Party Notices
+# Third-party notices
 
-SoL-Pi does not vendor third-party source code. Its npm tarball contains only SoL-Pi source, documentation, tests-excluded assets, and project metadata.
+## Original SoL-Pi work
 
-## Runtime peer dependencies
+SoL-OMP forks [NVlabs/SoL-Pi](https://github.com/NVlabs/SoL-Pi). Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. The upstream code and documentation are licensed under MIT; their copyright headers and the original [LICENSE](LICENSE) are retained. This fork is independent of NVIDIA.
 
-The following packages are supplied by the user's Pi installation and retain their own licenses:
+## OMP packages
 
-| Package | Development-tested version | License | Source |
-|---|---:|---|---|
-| `@earendil-works/pi-agent-core` | 0.85.1 | MIT | <https://github.com/earendil-works/pi> |
-| `@earendil-works/pi-ai` | 0.85.1 | MIT | <https://github.com/earendil-works/pi> |
-| `@earendil-works/pi-coding-agent` | 0.85.1 | MIT | <https://github.com/earendil-works/pi> |
-| `@earendil-works/pi-tui` | 0.85.1 | MIT | <https://github.com/earendil-works/pi> |
-| `typebox` | 1.3.7 | MIT | <https://github.com/sinclairzx81/typebox> |
+`@oh-my-pi/pi-agent-core`, `@oh-my-pi/pi-ai`, `@oh-my-pi/pi-coding-agent`, `@oh-my-pi/pi-tui`, `@oh-my-pi/pi-utils` and `@oh-my-pi/omptype` are provided by the [Oh My Pi](https://github.com/can1357/oh-my-pi) runtime and retain their own MIT licenses. Development uses 18.2.11; `@oh-my-pi/pi-catalog` is used by test fixtures. No OMP source is copied into this package.
 
-## Development-only dependencies
-
-`@types/node` (MIT), TypeScript (Apache-2.0), and Vitest (MIT) are used to type-check and test the repository. They are not included in the SoL-Pi npm tarball. Exact versions and transitive dependency metadata are recorded in `package-lock.json`.
-
-## Star history chart generation
-
-The documentation workflow checks out the MIT-licensed [Star History renderer](https://github.com/star-history/star-history/tree/c326eac651bc5afb4cd40d354223dd419e1e2ae6) to preserve its chart design. Its source and dependencies are installed only for chart generation and are not included in the SoL-Pi npm tarball. The generated chart branch includes the upstream MIT license as `LICENSE-star-history.txt`.
+Development-only `@types/node` (MIT), TypeScript (Apache-2.0), and Vitest (MIT) remain under their own licenses. See `package-lock.json` for exact versions and transitive dependencies. Bun runs the tests; no third-party source is bundled into the repository's npm tarball.
