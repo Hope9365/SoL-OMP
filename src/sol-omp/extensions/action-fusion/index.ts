@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 import type { ExtensionAPI, ExtensionFactory, ToolInfo } from "@oh-my-pi/pi-coding-agent";
-import { Type, type AnySchema } from "@oh-my-pi/omptype/typebox";
+import { fromJsonSchema } from "@oh-my-pi/omptype";
+import { Type } from "@oh-my-pi/omptype/typebox";
 import { showSolOmpSavings } from "../../tui.ts";
 import { executeMutationThenRun, THEN_RUN_SUCCEEDED, type ThenRunInput } from "./then-run.ts";
 
@@ -23,7 +24,7 @@ export function createActionFusionExtension(): ExtensionFactory {
    if (typeof native.parameters !== "function" || typeof native.parameters.toJsonSchema !== "function") {
     throw new Error("Unsupported native OMP " + name + " schema");
    }
-   const parameters = Type.Intersect([native.parameters as unknown as AnySchema, thenRunSchema]);
+   const parameters = Type.Intersect([fromJsonSchema(native.parameters.toJsonSchema()), thenRunSchema]);
    pi.registerTool({
     name,
     label: name === "edit" ? "Edit" : "Write",

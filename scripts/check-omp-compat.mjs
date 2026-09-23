@@ -53,3 +53,5 @@ try {
 } finally {
  await session.dispose();
 }
+// The one-shot probe must exit even if OMP background work outlives session.dispose().
+process.exit(0);

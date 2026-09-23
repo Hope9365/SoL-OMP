@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 import { describe, expect, it, vi } from "vitest";
-import { Type } from "@oh-my-pi/omptype/typebox";
+import { Type, type TSchema } from "@oh-my-pi/omptype/typebox";
 import { registerActionFusion } from "../src/sol-omp/extensions/action-fusion/index.ts";
 import { FakePi, FakeSessionManager, fakeContext } from "./helpers.ts";
 
@@ -14,12 +14,26 @@ function setup() {
 }
 
 describe("Action Fusion native OMP delegation", () => {
+ it("accepts native tool schemas from a different omptype instance", () => {
+  const pi = new FakePi();
+  const native = pi.getAllTools();
+  vi.spyOn(pi, "getAllTools").mockReturnValue(native.map((tool) => ({
+   ...tool,
+   parameters: Object.assign(() => ({}), {
+    toJsonSchema: () => (tool.parameters as unknown as TSchema).toJsonSchema(),
+   }) as unknown as typeof tool.parameters,
+  })));
+  registerActionFusion(pi.asExtensionApi());
+  expect((pi.tool("write").parameters as unknown as TSchema)
+   .safeParse({ path: "a.txt", content: "ok", then_run: { command: "echo ok" } }).success).toBe(true);
+ });
+
  it("accepts input-based edit variants without inventing a path, and leaves plain edits untouched", async () => {
   const pi = setup();
   const native = vi.fn(async () => ({ content: [{ type: "text" as const, text: "original edit result" }] }));
   const context = fakeContext(new FakeSessionManager(), { invokeTool: native });
   const edit = pi.tool("edit");
-  expect((edit.parameters as ReturnType<typeof Type.Intersect>).safeParse({ input: "[file#hash]\nPUT 1.=1:\n+fixed", then_run: { command: "echo ok" } }).success).toBe(true);
+  expect((edit.parameters as unknown as TSchema).safeParse({ input: "[file#hash]\nPUT 1.=1:\n+fixed", then_run: { command: "echo ok" } }).success).toBe(true);
   const original = await edit.execute("edit-1", { input: "patch data" }, undefined, undefined, context);
   expect(original).toEqual({ content: [{ type: "text", text: "original edit result" }] });
   expect(native).toHaveBeenCalledWith({ input: "patch data" }, expect.any(Object));

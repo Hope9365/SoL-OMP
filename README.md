@@ -19,7 +19,7 @@ SoL-OMP adapts the [NVlabs/SoL-Pi](https://github.com/NVlabs/SoL-Pi) research ex
 
 Requires OMP **18.2.11**, Bun (OMP's runtime), Node.js **22.19+** and npm for development checks. Use a trusted project; do not install an unreviewed extension into a privileged agent.
 
-Once this repository is published at the URL below, from the project that will run OMP:
+From the project that will run OMP:
 
 ```sh
 omp plugin install github:Hope9365/SoL-OMP --scope=project
