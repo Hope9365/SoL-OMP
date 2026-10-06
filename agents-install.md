@@ -34,6 +34,8 @@ All four mechanisms are disabled by default. Copy `sol-omp.example.json` to a si
 
 The project file wins and replaces the user file; they are not merged. Enable only mechanisms explicitly requested. Action Fusion wraps mutation tools with execution-level approval. Observation Pack writes sensitive outputs to the session directory. Evidence-Preserving Reducer sends eligible logs to a configured remote model. Online Context Compact may interrupt a turn and continue after compaction. Review [SECURITY.md](SECURITY.md) before enabling any of them.
 
+Archives use the persistent session root or an automatic private directory under the OS temporary directory for `--no-session` and SDK in-memory sessions. Do not configure a separate storage path. Temporary archives survive shutdown for parent workers; remove them only when no active worker needs them, or rely on OS cleanup.
+
 To require an all-enabled profile, edit the four flags to `true` and run:
 
 ```sh

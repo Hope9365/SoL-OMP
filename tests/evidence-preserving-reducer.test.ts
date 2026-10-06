@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { isAbsolute, join, relative } from "node:path";
 import type { AssistantMessage, Context, Model } from "@oh-my-pi/pi-ai";
 import { getBundledModel } from "@oh-my-pi/pi-catalog";
-import type { ExtensionContext, ToolResultEvent } from "@oh-my-pi/pi-coding-agent";
+import { SessionManager, type ExtensionContext, type ToolResultEvent } from "@oh-my-pi/pi-coding-agent";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	createEvidencePreservingReducerExtension,
@@ -160,6 +160,33 @@ function load(
 }
 
 describe("evidence-preserving reducer", () => {
+	it("reduces and preserves evidence after an in-memory session shuts down", async () => {
+		const sessionManager = SessionManager.inMemory();
+		const signal = "ERROR in-memory worker failed";
+		const body = `${signal}\n${"diagnostic output\n".repeat(400)}`;
+		const { context, pi } = load("", modelComplete(body, (input) => ({
+			schema: REDUCER_RECEIPT_SCHEMA,
+			source_sha256: sourceHash(input),
+			status: "failure",
+			uncertain: false,
+			evidence: [{ kind: "failure", quote: signal }],
+		})), ACTIVE_MODEL, { sessionManager });
+		const root = runtimeRoot(context);
+		cleanupPaths.push(root);
+		const result = (await pi.emit("tool_result", bashEvent(body), context)) as {
+			content: { type: string; text: string }[];
+		};
+		const receipt = result.content[0]!.text;
+		expect(receipt).toContain("sol_omp_evidence_receipt_v1");
+		const sourcePath = receipt.match(/^source_artifact=(.+)$/mu)?.[1];
+		expect(sourcePath).toBeTruthy();
+		await pi.emit("session_shutdown", { type: "session_shutdown" }, context);
+		expect(await readFile(sourcePath!, "utf8")).toBe(body);
+		expect(runtimeRoot(fakeContext("", { sessionManager }))).toBe(root);
+		expect(relative(root, sourcePath!)).not.toMatch(/^\.\./u);
+		expect(sessionManager.getSessionFile()).toBeUndefined();
+	});
+
 	it("registers without an extension-specific credential", () => {
 		const pi = new FakePi();
 		expect(() => createEvidencePreservingReducerExtension()(pi.asExtensionApi())).not.toThrow();
@@ -428,24 +455,19 @@ describe("evidence-preserving reducer", () => {
 		);
 	});
 
-	it("fails open when Pi has no persistent session directory", async () => {
-		const manager = new FakeSessionManager([], "ephemeral-session", "");
-		const pi = new FakePi(manager);
-		createEvidencePreservingReducerExtension()(pi.asExtensionApi());
+	it("fails open for an unsafe session id before calling the reducer", async () => {
 		let calls = 0;
-		const context = fakeContext(manager, {
-			model: ACTIVE_MODEL,
-			modelRegistry: {
-				complete: async () => {
-					calls++;
-					throw new Error("unexpected model call");
-				},
-			} as unknown as ExtensionContext["modelRegistry"],
+		const { context, manager, pi } = load("", async () => {
+			calls++;
+			throw new Error("unexpected model call");
 		});
-		const body = `ERROR no session storage\n${"x".repeat(5000)}`;
+		manager.sessionId = "../escape";
+		manager.sessionFile = undefined;
+		const body = `ERROR unsafe session id\n${"x".repeat(5000)}`;
 
 		expect(await pi.emit("tool_result", bashEvent(body), context)).toBeUndefined();
 		expect(calls).toBe(0);
+		expect(manager.customEntryData()).toEqual([]);
 	});
 
 	it("leaves OMP artifact-backed diagnostics intact rather than reducing a truncated preview", async () => {

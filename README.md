@@ -57,6 +57,6 @@ npm run check
 
 ## Storage and attribution
 
-Archives live under `<OMP session directory>/sol-omp/<session id>/`; they may contain sensitive output and persist until deleted with the session. In-memory sessions leave large observations and logs untouched. OMP's own artifact-backed truncated outputs are not reduced. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the upstream work and dependency licenses.
+Persistent archives live under `<OMP session directory>/sol-omp/<session id>/`. With `--no-session` or SDK in-memory sessions, SoL-OMP creates a private randomized `sol-omp-<session id>-…` directory under the OS temporary directory. Both mechanisms share that session root; files survive shutdown so parent workers can read evidence. Temporary archives are not durable history and are not deleted automatically: remove them when no active worker needs them, or let OS cleanup reclaim them. They may contain sensitive output. OMP's own artifact-backed truncated outputs are not reduced. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the upstream work and dependency licenses.
 
 Original research: [SoL-Pi](https://github.com/NVlabs/SoL-Pi) by NVIDIA, MIT-licensed. This fork does not claim its published benchmarks or maintenance commitments.

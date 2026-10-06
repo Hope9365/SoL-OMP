@@ -7,6 +7,8 @@ SoL-OMP runs with its OMP process's filesystem, network and credential permissio
 - **Evidence-Preserving Reducer** archives source logs and may send eligible content to a configured model through OMP credentials. Its likely-secret filter is only a precaution, not data-loss-prevention. Never enable it for logs that must remain local. Invalid hashes, invented quotes, unusable models, model errors, non-smaller receipts and `artifact://`-truncated results pass through unchanged. Archive files persist until the session data is removed.
 - **Online Context Compact** writes plans, progress and economics state as custom OMP session entries. Treat them like conversation data. After successful compaction, a generic reminder may trigger another agent turn.
 
+For `--no-session` and SDK in-memory sessions, Observation Pack and the reducer share a randomized private directory under the OS temporary directory. These files survive shutdown for parent workers and can contain sensitive logs. Delete them after all workers finish; automatic session cleanup does not remove them.
+
 OMP 18.2.11 reports all projects as trusted to extensions, with no project-config trust prompt. Review a project-local `.omp/sol-omp.json` before launching OMP in that directory. Do not store provider tokens or passwords in the config, source tree, command lines or issue reports.
 
 Report vulnerabilities privately via [GitHub Security Advisories](https://github.com/Hope9365/SoL-OMP/security/advisories/new); do not publish exploit details in an issue. Include affected commit, configuration, impact and a minimal reproduction. OMP core vulnerabilities belong in the [OMP upstream repository](https://github.com/can1357/oh-my-pi).

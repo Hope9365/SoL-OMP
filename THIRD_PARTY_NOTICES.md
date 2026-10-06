@@ -4,6 +4,8 @@
 
 SoL-OMP forks [NVlabs/SoL-Pi](https://github.com/NVlabs/SoL-Pi). Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. The upstream code and documentation are licensed under MIT; their copyright headers and the original [LICENSE](LICENSE) are retained. This fork is independent of NVIDIA.
 
+Upstream history is merged through [`e1a586af0ad8956f42ae5b26bba20e48fbf30e00`](https://github.com/NVlabs/SoL-Pi/commit/e1a586af0ad8956f42ae5b26bba20e48fbf30e00), including the ephemeral archive and online-compaction fixes. Pi-specific runtime calls are adapted to OMP; upstream authorship remains in Git history.
+
 ## OMP packages
 
 `@oh-my-pi/pi-agent-core`, `@oh-my-pi/pi-ai`, `@oh-my-pi/pi-coding-agent`, `@oh-my-pi/pi-tui`, `@oh-my-pi/pi-utils` and `@oh-my-pi/omptype` are provided by the [Oh My Pi](https://github.com/can1357/oh-my-pi) runtime and retain their own MIT licenses. Development uses 18.2.11; `@oh-my-pi/pi-catalog` is used by test fixtures. No OMP source is copied into this package.

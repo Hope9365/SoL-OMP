@@ -50,7 +50,7 @@ export function registerOnlineTools(pi: ExtensionAPI, handlers: OnlineToolHandle
 		name: "update_plan",
 		label: "Update plan",
 		description:
-			"Replace the complete working plan. A newly completed step becomes a safe point where SoL-OMP may compact context if doing so is economical. Send the complete plan on each update, with at most one step in_progress.",
+			"Replace the complete working plan. Completing a previously registered unfinished step becomes a safe point where SoL-OMP may compact context if economical. Newly introduced completed steps are history, not completion transitions. Preserve step IDs and register unfinished steps before completing them. Send the complete plan each time with at most one step in_progress; include concise progress evidence when available.",
 		parameters: Type.Object(
 			{
 				steps: Type.Array(planStepSchema, { minItems: 1, maxItems: 128 }),
