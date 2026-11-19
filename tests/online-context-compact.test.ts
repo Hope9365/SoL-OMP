@@ -2,8 +2,7 @@
  * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: MIT
  */
-import type { AgentMessage } from "@oh-my-pi/pi-agent-core";
-import { Tokenizer } from "@oh-my-pi/pi-agent-core/tokenizer";
+import { Tokenizer, type AgentMessage } from "@oh-my-pi/pi-agent-core";
 import type { CompactOptions, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
 import { describe, expect, it, vi } from "vitest";
 import {

@@ -2,8 +2,8 @@
  * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: MIT
  */
+import type { BaseType } from "@oh-my-pi/omptype";
 import { describe, expect, it, vi } from "vitest";
-import { Type, type TSchema } from "@oh-my-pi/omptype/typebox";
 import { registerActionFusion } from "../src/sol-omp/extensions/action-fusion/index.ts";
 import { FakePi, FakeSessionManager, fakeContext } from "./helpers.ts";
 
@@ -20,12 +20,14 @@ describe("Action Fusion native OMP delegation", () => {
   vi.spyOn(pi, "getAllTools").mockReturnValue(native.map((tool) => ({
    ...tool,
    parameters: Object.assign(() => ({}), {
-    toJsonSchema: () => (tool.parameters as unknown as TSchema).toJsonSchema(),
+    toJsonSchema: () => (tool.parameters as unknown as BaseType).toJsonSchema(),
    }) as unknown as typeof tool.parameters,
   })));
   registerActionFusion(pi.asExtensionApi());
-  expect((pi.tool("write").parameters as unknown as TSchema)
-   .safeParse({ path: "a.txt", content: "ok", then_run: { command: "echo ok" } }).success).toBe(true);
+  const schema = pi.tool("write").parameters as unknown as BaseType;
+  expect(schema.allows({ path: "a.txt", content: "ok", then_run: { command: "echo ok" } })).toBe(true);
+  expect(schema.allows({ path: "a.txt", then_run: { command: "echo ok" } })).toBe(false);
+  expect(schema.allows({ path: "a.txt", content: "ok", then_run: { timeout: 1 } })).toBe(false);
  });
 
  it("accepts input-based edit variants without inventing a path, and leaves plain edits untouched", async () => {
@@ -33,7 +35,7 @@ describe("Action Fusion native OMP delegation", () => {
   const native = vi.fn(async () => ({ content: [{ type: "text" as const, text: "original edit result" }] }));
   const context = fakeContext(new FakeSessionManager(), { invokeTool: native });
   const edit = pi.tool("edit");
-  expect((edit.parameters as unknown as TSchema).safeParse({ input: "[file#hash]\nPUT 1.=1:\n+fixed", then_run: { command: "echo ok" } }).success).toBe(true);
+  expect((edit.parameters as unknown as BaseType).allows({ input: "[file#hash]\nPUT 1.=1:\n+fixed", then_run: { command: "echo ok" } })).toBe(true);
   const original = await edit.execute("edit-1", { input: "patch data" }, undefined, undefined, context);
   expect(original).toEqual({ content: [{ type: "text", text: "original edit result" }] });
   expect(native).toHaveBeenCalledWith({ input: "patch data" }, expect.any(Object));

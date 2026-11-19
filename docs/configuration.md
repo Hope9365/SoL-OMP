@@ -2,11 +2,11 @@
 
 SoL-OMP reads one JSON file at OMP session startup. Search order:
 
-1. `<working directory>/.omp/sol-omp.json` (OMP 18.2.11 reports all projects as trusted to extensions);
+1. `<working directory>/.omp/sol-omp.json` (OMP 19.0.0 reports all projects as trusted to extensions);
 2. `<OMP agent directory>/sol-omp.json` (`~/.omp/agent/sol-omp.json` by default);
 3. built-in defaults.
 
-OMP 18.2.11 does not show a trust prompt before accepting this project file. Review cloned projects before starting OMP. The project file replaces the global file; values are not merged. `OMP`'s `getAgentDir()` and `CONFIG_DIR_NAME` determine the real directories.
+OMP 19.0.0 does not show a trust prompt before accepting this project file. Review cloned projects before starting OMP. The project file replaces the global file; values are not merged. `OMP`'s `getAgentDir()` and `CONFIG_DIR_NAME` determine the real directories.
 
 ```json
 {

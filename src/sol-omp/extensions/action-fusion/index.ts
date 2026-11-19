@@ -8,12 +8,10 @@ import { Type } from "@oh-my-pi/omptype/typebox";
 import { showSolOmpSavings } from "../../tui.ts";
 import { executeMutationThenRun, THEN_RUN_SUCCEEDED, type ThenRunInput } from "./then-run.ts";
 
-const thenRunSchema = Type.Object({
- then_run: Type.Optional(Type.Object({
-  command: Type.String({ description: "Shell command to run after a successful mutation" }),
-  timeout: Type.Optional(Type.Number({ minimum: 0, description: "Timeout in seconds" })),
- })),
-});
+const thenRunProperty = Type.Object({
+ command: Type.String({ description: "Shell command to run after a successful mutation" }),
+ timeout: Type.Optional(Type.Number({ minimum: 0, description: "Timeout in seconds" })),
+}).toJsonSchema();
 
 /** Preserve the active OMP edit variant (replace, patch, hashline, apply_patch, sloppy). */
 export function createActionFusionExtension(): ExtensionFactory {
@@ -24,7 +22,12 @@ export function createActionFusionExtension(): ExtensionFactory {
    if (typeof native.parameters !== "function" || typeof native.parameters.toJsonSchema !== "function") {
     throw new Error("Unsupported native OMP " + name + " schema");
    }
-   const parameters = Type.Intersect([fromJsonSchema(native.parameters.toJsonSchema()), thenRunSchema]);
+   const schema = native.parameters.toJsonSchema();
+   if (schema.type !== "object" || !schema.properties || typeof schema.properties !== "object") {
+    throw new Error("Unsupported native OMP " + name + " object schema");
+   }
+   // Keep the provider-facing schema an object; OMP 19 serializes Intersect as allOf.
+   const parameters = fromJsonSchema({ ...schema, properties: { ...schema.properties, then_run: thenRunProperty } });
    pi.registerTool({
     name,
     label: name === "edit" ? "Edit" : "Write",

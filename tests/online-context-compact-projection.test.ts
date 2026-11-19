@@ -5,8 +5,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { AgentMessage } from "@oh-my-pi/pi-agent-core";
-import { Tokenizer } from "@oh-my-pi/pi-agent-core/tokenizer";
+import { Tokenizer, type AgentMessage } from "@oh-my-pi/pi-agent-core";
 import type { AssistantMessage } from "@oh-my-pi/pi-ai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createObservationPackExtension } from "../src/sol-omp/extensions/observation-pack/index.ts";

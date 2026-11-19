@@ -2,9 +2,8 @@
  * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: MIT
  */
-import type { AgentMessage, AgentToolResult } from "@oh-my-pi/pi-agent-core";
+import { Tokenizer, type AgentMessage, type AgentToolResult } from "@oh-my-pi/pi-agent-core";
 import { findCutPoint, type SessionEntry as CompactionSessionEntry } from "@oh-my-pi/pi-agent-core/compaction";
-import { Tokenizer } from "@oh-my-pi/pi-agent-core/tokenizer";
 import type { ExtensionContext, ExtensionFactory, SessionEntry } from "@oh-my-pi/pi-coding-agent";
 import { formatSavingsCount, showSolOmpSavings } from "../../tui.ts";
 

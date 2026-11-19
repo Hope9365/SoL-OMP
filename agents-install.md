@@ -4,7 +4,7 @@ Read this file before changing an installation. Respect explicit user instructio
 
 ## Source checkout
 
-Require Node.js 22.19+, Bun and OMP 18.2.11. From the SoL-OMP checkout:
+Require Node.js 22.19+, Bun 1.4.4+ and OMP 19.0.0. From the SoL-OMP checkout:
 
 ```sh
 npm ci --ignore-scripts
