@@ -100,11 +100,12 @@ describe("Online Context Compact recovery", () => {
 		expect(pi.sentMessages).toHaveLength(0);
 	});
 
-	it("still reports genuine compaction failures", async () => {
+	it("resumes the interrupted task once and still reports genuine compaction failures", async () => {
 		const { pi, ctx, boundary } = await scenario(new Error("summarizer unavailable"));
 		await boundary("first");
 		await expect(pi.emit("agent_end", {}, ctx)).rejects.toThrow("summarizer unavailable");
-		expect(pi.sentMessages).toHaveLength(0);
+		expect(pi.sentMessages).toHaveLength(1);
+		expect(pi.sentMessages[0]?.message.content).toContain("Continue the remaining work");
 	});
 
 	it("does not charge a failed attempt's debt to another compaction during recovery", async () => {

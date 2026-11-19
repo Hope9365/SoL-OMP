@@ -11,7 +11,7 @@ SoL-OMP adapts the [NVlabs/SoL-Pi](https://github.com/NVlabs/SoL-Pi) research ex
 | **Action Fusion** | `edit`/`write` can execute an optional `then_run` command in the same tool call. | Native OMP edit modes and write implementation handle mutations; commands never run after a failed mutation. |
 | **Observation Pack** | Large repeated text observations become small placeholders with exact paged `obs_recall`. | Session history stays unchanged; archives remain on disk in persistent sessions. |
 | **Evidence-Preserving Reducer** | Long diagnostic output may become a compact receipt with source hash and verbatim quotes. | Opt-in remote model call; uncertain, invalid, secret-looking, or artifact-truncated output passes through unchanged. |
-| **Online Context Compact** | Completed `update_plan` steps can trigger economical native compaction and a continuation reminder. | OMP owns the summary; the mechanism retains plan state in the session log. |
+| **Online Context Compact** | Completed `update_plan` steps can trigger economical native compaction and a continuation reminder. | OMP owns the summary; the plan survives compaction failure and the interrupted task resumes unless cancelled. |
 
 **Nothing is enabled by installing the package.** Each feature is `false` until explicitly selected in `sol-omp.json`.
 
@@ -60,3 +60,5 @@ npm run check
 Persistent archives live under `<OMP session directory>/sol-omp/<session id>/`. With `--no-session` or SDK in-memory sessions, SoL-OMP creates a private randomized `sol-omp-<session id>-…` directory under the OS temporary directory. Both mechanisms share that session root; files survive shutdown so parent workers can read evidence. Temporary archives are not durable history and are not deleted automatically: remove them when no active worker needs them, or let OS cleanup reclaim them. They may contain sensitive output. OMP's own artifact-backed truncated outputs are not reduced. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the upstream work and dependency licenses.
 
 Original research: [SoL-Pi](https://github.com/NVlabs/SoL-Pi) by NVIDIA, MIT-licensed. This fork does not claim its published benchmarks or maintenance commitments.
+
+Upstream also publishes [SoL-Pi Skill](https://github.com/NVlabs/SoL-Pi/tree/2195680/examples/sol-pi-skill) (Claude Code/Codex hand-off) and [SoL-Pi Visual](https://github.com/NVlabs/SoL-Pi/tree/2195680/examples/solpi-visual) (scene reconstruction). These are Pi examples, not OMP plugins.

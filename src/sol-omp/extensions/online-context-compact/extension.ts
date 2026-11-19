@@ -40,6 +40,9 @@ export const POST_COMPACTION_PLAN_REMINDER =
 export const SKIPPED_COMPACTION_REMINDER =
 	"Online context compaction was skipped. The existing context is still available. " +
 	"Continue the remaining work from the current plan.";
+const FAILED_COMPACTION_REMINDER =
+	"Online context compaction did not complete. The parent task is still active. " +
+	"Continue the remaining work from the current plan.";
 // OMP rejects these before committing a replacement summary, so the current
 // context is still usable. Unknown errors and user cancellation remain distinct.
 const RECOVERABLE_COMPACTION_ERRORS = new Set([
@@ -342,21 +345,25 @@ export function createOnlineContextCompactExtension(options: OnlineContextCompac
 					activeDebt = undefined;
 					compactionError = error instanceof Error ? error : new Error(String(error));
 				}
-				const recoverableError = compactionError !== undefined && RECOVERABLE_COMPACTION_ERRORS.has(compactionError.message);
-				if (compactionError && !recoverableError && compactionError.name !== "AbortError" && compactionError.message !== "Compaction cancelled") throw compactionError;
+				const failure = compactionError?.name === "AbortError" || compactionError?.message === "Compaction cancelled"
+					? undefined
+					: compactionError;
+				const recoverableError = failure !== undefined && RECOVERABLE_COMPACTION_ERRORS.has(failure.message);
 				if (recoverableError) {
 					compactionRefused = true;
-					pi.appendEntry("sol-omp-online-context-compact-skipped", { reason: compactionError!.message });
-					if (context.mode === "tui") context.ui.notify(`Online compaction skipped: ${compactionError!.message}`, "warning");
+					pi.appendEntry("sol-omp-online-context-compact-skipped", { reason: failure.message });
+					if (context.mode === "tui") context.ui.notify(`Online compaction skipped: ${failure.message}`, "warning");
 				}
-				if (compacted || recoverableError) {
+				if (compacted || failure) {
 					// OMP schedules triggerTurn asynchronously; don't wait for a child turn here.
 					pi.sendMessage({
 						customType: "sol-omp-online-context-compact",
-						content: compacted ? POST_COMPACTION_PLAN_REMINDER : SKIPPED_COMPACTION_REMINDER,
+						content: compacted ? POST_COMPACTION_PLAN_REMINDER
+							: recoverableError ? SKIPPED_COMPACTION_REMINDER : FAILED_COMPACTION_REMINDER,
 						display: false,
 					}, { triggerTurn: true });
 				}
+				if (failure && !recoverableError) throw failure;
 			} finally {
 				compactionInFlight = false;
 				activeDebt = undefined;
