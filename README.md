@@ -17,7 +17,7 @@ SoL-OMP adapts the [NVlabs/SoL-Pi](https://github.com/NVlabs/SoL-Pi) research ex
 
 ## Install
 
-Requires OMP **19.0.0**, Bun **1.4.4+**, Node.js **22.19+** and npm for development checks. Use a trusted project; do not install an unreviewed extension into a privileged agent.
+Requires OMP **19.2.0**, Bun **1.4.4+**, Node.js **22.19+** and npm for development checks. Use a trusted project; do not install an unreviewed extension into a privileged agent.
 
 From the project that will run OMP:
 
@@ -53,7 +53,7 @@ npm ci --ignore-scripts
 npm run check
 ```
 
-`check` runs TypeScript checking, public OMP API checks, Bun tests, and a package dry-run. The lockfile pins OMP 19.0.0 for development; no OMP source tree is vendored. Tests do not require a remote model. Pull requests use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/); see [CONTRIBUTING.md](CONTRIBUTING.md).
+`check` runs TypeScript checking, public OMP API checks, Bun tests, and a package dry-run. The lockfile pins OMP 19.2.0 for development; no OMP source tree is vendored. Tests do not require a remote model. Pull requests use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/); see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Storage and attribution
 

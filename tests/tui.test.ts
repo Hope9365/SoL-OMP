@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import type { ExtensionContext, Theme } from "@oh-my-pi/pi-coding-agent";
-import { Text } from "@oh-my-pi/pi-tui";
+import type { ExtensionContext } from "@oh-my-pi/pi-coding-agent";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	formatSavingsBytes,
@@ -13,10 +12,7 @@ import {
 	showSolOmpSavings,
 } from "../src/sol-omp/tui.ts";
 
-const theme = {
-	fg: (_color: string, text: string) => text,
-	bold: (text: string) => text,
-} as unknown as Theme;
+import { plainTheme } from "./helpers.ts";
 
 function uiContext(mode: ExtensionContext["mode"]) {
 	const notify = vi.fn();
@@ -35,10 +31,10 @@ describe("SoL-OMP TUI savings presentation", () => {
 
 	it("renders an English lightning header and measurable savings above the original tool component", () => {
 		const component = renderSolOmpTool(
-			theme,
+			plainTheme,
 			"Action Fusion",
 			"1 model round-trip avoided",
-			new Text("original edit renderer", 0, 0),
+			"original edit renderer",
 		);
 
 		expect(component.render(100).map((line) => line.trimEnd()).join("\n")).toBe(

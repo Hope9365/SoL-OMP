@@ -15,7 +15,7 @@ import {
 	FULL_SENDS,
 	THRESHOLD_BYTES,
 } from "../src/sol-omp/extensions/observation-pack/index.ts";
-import { componentText, FakePi, FakeSessionManager, fakeContext, plainTheme } from "./helpers.ts";
+import { FakePi, FakeSessionManager, fakeContext, plainTheme } from "./helpers.ts";
 import { runtimeRoot } from "../src/sol-omp/runtime-paths.ts";
 
 const roots: string[] = [];
@@ -131,8 +131,10 @@ describe("observation pack", () => {
 		const args = { id: "obs_0123456789abcdef01234567", offset: 0 };
 		const rendered = recall.renderCall!(args, { expanded: false, isPartial: false }, plainTheme);
 
-		expect(componentText(rendered)).toContain("⚡ SoL-OMP · Observation Pack");
-		expect(componentText(rendered)).toContain("Money saved");
+		if (!rendered || typeof rendered !== "object" || !("render" in rendered)) throw new Error("Expected host-renderable rows");
+		expect(rendered.render(120).join("\n")).toBe(
+			"⚡ SoL-OMP · Observation Pack\nMoney saved · full observation replay avoided\nRecall obs_0123456789abcdef01234567 from byte 0",
+		);
 	});
 
 	it("keeps the first two requests full and reuses one stable placeholder afterwards", async () => {

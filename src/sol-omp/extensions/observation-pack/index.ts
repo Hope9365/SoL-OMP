@@ -19,7 +19,6 @@
 
 import { join } from "node:path";
 import type { ExtensionAPI, ExtensionContext, ExtensionFactory } from "@oh-my-pi/pi-coding-agent";
-import { Text } from "@oh-my-pi/pi-tui";
 import { Type } from "@oh-my-pi/omptype/typebox";
 import { runtimeRoot } from "../../runtime-paths.ts";
 import { formatSavingsCount, renderSolOmpTool, showSolOmpSavings } from "../../tui.ts";
@@ -113,22 +112,17 @@ export function createObservationPackExtension(): ExtensionFactory {
 			},
 			renderCall(params, _options, theme) {
 				const offset = params.offset ?? 0;
-				const base = new Text(theme.fg("dim", `Recall ${params.id} from byte ${offset}`), 0, 0);
-				return renderSolOmpTool(theme, "Observation Pack", "full observation replay avoided", base);
+				return renderSolOmpTool(theme, "Observation Pack", "full observation replay avoided",
+					theme.fg("dim", `Recall ${params.id} from byte ${offset}`));
 			},
 			renderResult(result, { isPartial }, theme) {
 				const details = result.details as { bytes?: number; lines?: number } | undefined;
-				const base = new Text(
-					theme.fg(
-						isPartial ? "warning" : "dim",
-						isPartial
-							? "Recalling the requested slice..."
-							: `Recalled ${details?.bytes ?? 0} bytes across ${details?.lines ?? 0} lines`,
-					),
-					0,
-					0,
-				);
-				return renderSolOmpTool(theme, "Observation Pack", "full observation replay avoided", base);
+				return renderSolOmpTool(theme, "Observation Pack", "full observation replay avoided", theme.fg(
+					isPartial ? "warning" : "dim",
+					isPartial
+						? "Recalling the requested slice..."
+						: `Recalled ${details?.bytes ?? 0} bytes across ${details?.lines ?? 0} lines`,
+				));
 			},
 		});
 

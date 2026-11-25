@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 import type { AgentMessage } from "@oh-my-pi/pi-agent-core";
-import type { ExtensionAPI, ExtensionContext, SessionEntry, Theme, ToolDefinition, ToolInfo, ExecResult } from "@oh-my-pi/pi-coding-agent";
-import type { Component } from "@oh-my-pi/pi-tui";
+import type { ExtensionAPI, ExtensionContext, ExtensionTheme, SessionEntry, ToolDefinition, ToolInfo, ExecResult } from "@oh-my-pi/pi-coding-agent";
 import { Type } from "@oh-my-pi/omptype/typebox";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -15,14 +14,7 @@ export const plainTheme = {
 	fg: (_color: string, text: string) => text,
 	bg: (_color: string, text: string) => text,
 	bold: (text: string) => text,
-} as unknown as Theme;
-
-export function componentText(component: Component, width = 120): string {
-	return component
-		.render(width)
-		.map((line) => line.trimEnd())
-		.join("\n");
-}
+} as unknown as ExtensionTheme;
 
 /**
  * Minimal session manager stand-in: enough for extensions that only need a

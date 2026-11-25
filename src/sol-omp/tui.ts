@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import type { ExtensionContext, Theme } from "@oh-my-pi/pi-coding-agent";
-import { type Component, Container, Text } from "@oh-my-pi/pi-tui";
+import type { ExtensionContext, ExtensionRows, ExtensionTheme } from "@oh-my-pi/pi-coding-agent";
 
 export type SolOmpTuiMechanism =
 	| "Action Fusion"
@@ -36,17 +35,17 @@ export function formatSavingsBytes(value: number): string {
 }
 
 export function renderSolOmpTool(
-	theme: Theme,
+	theme: ExtensionTheme,
 	mechanism: SolOmpTuiMechanism,
 	saving: string,
-	base?: Component,
-): Component {
-	const container = new Container();
-	const title = `${theme.fg("warning", "⚡")} ${theme.fg("accent", theme.bold(`SoL-OMP · ${mechanism}`))}`;
-	container.addChild(new Text(title, 0, 0));
-	container.addChild(new Text(theme.fg("success", `Money saved · ${saving}`), 0, 0));
-	if (base) container.addChild(base);
-	return container;
+	detail: string,
+): ExtensionRows {
+	const rows = [
+		`${theme.fg("warning", "⚡")} ${theme.fg("accent", theme.bold(`SoL-OMP · ${mechanism}`))}`,
+		theme.fg("success", `Money saved · ${saving}`),
+		detail,
+	];
+	return { render: () => rows };
 }
 
 export function showSolOmpSavings(

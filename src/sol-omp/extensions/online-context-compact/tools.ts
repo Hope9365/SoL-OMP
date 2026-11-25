@@ -4,7 +4,6 @@
  */
 import type { AgentToolResult } from "@oh-my-pi/pi-agent-core";
 import type { ExtensionAPI, ExtensionContext } from "@oh-my-pi/pi-coding-agent";
-import { Text } from "@oh-my-pi/pi-tui";
 import { Type } from "@oh-my-pi/omptype/typebox";
 import { renderSolOmpTool } from "../../tui.ts";
 import { PLAN_STATUSES, type PlanStep } from "./plan.ts";
@@ -72,7 +71,7 @@ export function registerOnlineTools(pi: ExtensionAPI, handlers: OnlineToolHandle
 				theme,
 				"Online Context Compact",
 				"compacts only when projected savings are positive",
-				new Text(theme.fg("dim", `Plan: ${params.steps.length} steps, ${completed} completed`), 0, 0),
+				theme.fg("dim", `Plan: ${params.steps.length} steps, ${completed} completed`),
 			);
 		},
 		renderResult(result, { isPartial }, theme) {
@@ -81,11 +80,7 @@ export function registerOnlineTools(pi: ExtensionAPI, handlers: OnlineToolHandle
 				theme,
 				"Online Context Compact",
 				"compacts only when projected savings are positive",
-				new Text(
-					theme.fg(isPartial ? "warning" : "dim", isPartial ? "Updating plan..." : boundary ? "Progress boundary recorded" : "Plan recorded"),
-					0,
-					0,
-				),
+				theme.fg(isPartial ? "warning" : "dim", isPartial ? "Updating plan..." : boundary ? "Progress boundary recorded" : "Plan recorded"),
 			);
 		},
 	});

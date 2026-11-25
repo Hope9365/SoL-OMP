@@ -1,10 +1,12 @@
 # OMP compatibility
 
-This fork targets **Oh My Pi 19.0.0**. Development dependencies are pinned to this version; a different OMP version requires a fresh typecheck, compatibility check, test run and interactive startup check. Upstream Pi is not supported.
+This fork targets **Oh My Pi 19.2.0**. Development dependencies are pinned to this version; a different OMP version requires a fresh typecheck, compatibility check, test run and interactive startup check. Upstream Pi is not supported.
 
-The extension imports public package exports from `@oh-my-pi/pi-coding-agent`, `@oh-my-pi/pi-agent-core`, `@oh-my-pi/pi-ai`, `@oh-my-pi/pi-tui`, `@oh-my-pi/pi-utils` and `@oh-my-pi/omptype`. The package declares OMP-owned packages as peer dependencies and does not patch OMP.
+The extension imports public package exports from `@oh-my-pi/pi-coding-agent`, `@oh-my-pi/pi-agent-core`, `@oh-my-pi/pi-ai`, `@oh-my-pi/pi-utils` and `@oh-my-pi/omptype`. The package declares OMP-owned packages as peer dependencies and does not patch OMP.
 
 Import `Tokenizer` from the `@oh-my-pi/pi-agent-core` root. The installed OMP 19.0.0 executable exposes the root to extensions, but not the `/tokenizer` subpath; using that subpath pulls in a second copy of OMP packages and can fail on `pi-ai` or `pi-natives`.
+
+OMP 19.2 removed the old TUI `Container` and `Text` classes. SoL-OMP tool renderers return plain rows using the theme provided by the host, with no runtime import from `pi-tui`.
 
 - **Action Fusion:** gets native `edit`/`write` schemas from `pi.getAllTools()` and rebuilds them from JSON Schema before extending them; the OMP executable and a linked checkout have separate `omptype` instances. It delegates execution through same-tool `ctx.invokeTool()`, retaining OMP's active edit variant and mutation policy. The wrapper uses `pi.exec()` for the optional follow-up and reports a command failure without discarding a successful mutation. It declares `approval: "exec"` because one call may execute a command.
 - **Observation Pack:** rewrites only the public `context` projection. `SessionManager.getSessionFile()`, `getSessionDir()` and `getSessionId()` select persistent roots; nonpersistent sessions use cached, randomized roots under `tmpdir()`, even when OMP reports a configured session directory. Temporary archives remain readable after session shutdown.
